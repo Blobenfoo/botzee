@@ -1,0 +1,22 @@
+<html>
+    <head>
+        <title>OTube - Home</title>
+    </head>
+    <body>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <ul class=flashes>
+        {% for message in messages %}
+            <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+  {% endif %}
+{% endwith %}
+        <h1>OTube - BETA</h1>
+        {% for i in latest %}
+        <div>
+            <a href='/watch/{{ i["name"] }}'>{{ i["title"] }} ({{ other_data[i["name"]]["views"] }} views)</a>
+        </div>
+        {% endfor %}
+    </body>
+</html>

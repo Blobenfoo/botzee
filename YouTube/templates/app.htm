@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ video_title }} - Video Player</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #0f0f0f;
+            color: #fff;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .video-player {
+            width: 100%;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .video-player video {
+            width: 100%;
+            height: auto;
+            display: block;
+            aspect-ratio: 16 / 9;
+        }
+
+        .video-info {
+            padding: 0 0 20px 0;
+            border-bottom: 1px solid #272727;
+        }
+
+        .video-title {
+            font-size: 20px;
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+
+        .video-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 14px;
+            color: #aaa;
+            margin-bottom: 16px;
+        }
+
+        .video-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        button {
+            background: #272727;
+            color: #fff;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #3f3f3f;
+        }
+
+        .channel-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 0;
+            border-bottom: 1px solid #272727;
+        }
+
+        .channel-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #272727;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .channel-details {
+            flex: 1;
+        }
+
+        .channel-name {
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .channel-subs {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .subscribe-btn {
+            background: #f1f1f1;
+            color: #000;
+            padding: 10px 24px;
+            border-radius: 20px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .subscribe-btn:hover {
+            background: #e0e0e0;
+        }
+
+        .description {
+            margin-top: 16px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #aaa;
+            cursor: pointer;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sidebar-item {
+            background: #181818;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .sidebar-item:hover {
+            background: #272727;
+        }
+
+        .sidebar-thumbnail {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #272727;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .sidebar-info {
+            padding: 8px;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .sidebar-title {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .sidebar-channel {
+            color: #aaa;
+            font-size: 11px;
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+        }
+    </style>
+    <script>
+        async function like() {
+           let x = await fetch(file); 
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="main-content">
+            <!-- Video Player -->
+            <div class="video-player">
+                <video controls>
+                    <source src="data:video/webm;base64,{{ video_data }}" type="video/webm">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+
+            <!-- Video Info -->
+            <div class="video-info">
+                <h1 class="video-title">{{ video_title }}</h1>
+                <div class="video-stats">
+                    <span>{{ views }} views</span>
+                    <!-- <span>{{ upload_date | default('2 days ago', true) }}</span> !-->
+                </div>
+            </div>
+
+            <!-- Channel Info -->
+            <div class="channel-info">
+                <div class="channel-avatar">🎬</div>
+                <div class="channel-details">
+                    <div class="channel-name">{{ channel_name | default('Video Channel', true) }}</div>
+                    <div class="channel-subs">{{ subscribers }} subs</div>
+                    <form action="/subscribe/{{ channel_name }}">
+                        <button class="subscribe-btn" >SUBSCRIBE</button>
+                    </form>
+                </div>
+
+            <!-- Description -->
+            <div class="description">
+                <strong>Description:</strong><br>
+                {{ description | default('No description provided.', true) }}
+            </div>
+        </div>
+
+        <!-- Sidebar / Recommended Videos -->
+        <div class="sidebar">
+            <button onclick="like()">Like ({{ likes }})</button>
+        </div>
+    </div>
+</body>
+</html>
