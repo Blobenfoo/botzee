@@ -1,0 +1,16 @@
+[
+  {
+    "modid": "botzee",
+    "name": "Botzee",
+    "description": "A keypress-only neural gameplay assistant.",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "url": "",
+    "updateUrl": "",
+    "authorList": ["Botzee"],
+    "credits": "",
+    "logoFile": "",
+    "screenshots": [],
+    "dependencies": []
+  }
+]
