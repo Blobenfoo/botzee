@@ -1,13 +1,15 @@
+.gradle/
+build/
+out/
+run/
+.DS_Store
+
 # Python-generated files
 __pycache__/
 *.py[oc]
-build/
 dist/
 wheels/
 *.egg-info
 
 # Virtual environments
-.venv
-
-# Local project outside Botzee
-/YouTube/
+.venv/
