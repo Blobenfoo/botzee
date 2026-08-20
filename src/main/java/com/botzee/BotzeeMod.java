@@ -8,7 +8,7 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 @Mod(modid = BotzeeMod.MOD_ID, name = "Botzee", version = BotzeeMod.VERSION, clientSideOnly = true)
 public class BotzeeMod {
     public static final String MOD_ID = "botzee";
-    public static final String VERSION = "1.2.2";
+    public static final String VERSION = "1.2.3";
 
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {

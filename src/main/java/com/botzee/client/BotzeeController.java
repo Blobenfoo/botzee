@@ -30,7 +30,7 @@ public final class BotzeeController {
     private static final ModelManager MODELS = new ModelManager(new File(new File(MINECRAFT.mcDataDir, "botzee"), "models"), INPUTS, 24, ACTIONS);
     private static final BedwarsDetector BEDWARS = new BedwarsDetector();
     private static final KeyBinding RECORD_KEY = new KeyBinding("Botzee: Toggle recording", Keyboard.KEY_R, "Botzee");
-    private static final KeyBinding TRAIN_KEY = new KeyBinding("Botzee: Train policy", Keyboard.KEY_T, "Botzee");
+    private static final KeyBinding TRAIN_KEY = new KeyBinding("Botzee: Train policy", Keyboard.KEY_RBRACKET, "Botzee");
     private static final KeyBinding MODELS_KEY = new KeyBinding("Botzee: Open models", Keyboard.KEY_M, "Botzee");
     private static boolean recording;
     private static boolean playing;
