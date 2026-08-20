@@ -9,7 +9,7 @@ public final class BotzeeCommand extends CommandBase {
     public String getCommandName() { return "botzee"; }
 
     @Override
-    public String getCommandUsage(ICommandSender sender) { return "/botzee <record|learn|play|stop|status|clear> (R toggles recording, T trains)"; }
+    public String getCommandUsage(ICommandSender sender) { return "/botzee <record|learn|play|stop|status|clear|models|scores>"; }
 
     @Override
     public void processCommand(ICommandSender sender, String[] args) {
@@ -25,6 +25,10 @@ public final class BotzeeCommand extends CommandBase {
             sender.addChatMessage(new ChatComponentText("[Botzee] " + BotzeeController.status()));
         } else if (args.length == 1 && args[0].equalsIgnoreCase("clear")) {
             BotzeeController.clearRecording();
+        } else if (args.length == 1 && args[0].equalsIgnoreCase("models")) {
+            BotzeeController.openModels();
+        } else if (args.length == 1 && (args[0].equalsIgnoreCase("scores") || args[0].equalsIgnoreCase("score"))) {
+            BotzeeController.openChatScores();
         } else {
             sender.addChatMessage(new ChatComponentText(getCommandUsage(sender)));
         }

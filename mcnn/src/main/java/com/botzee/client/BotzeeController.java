@@ -12,6 +12,7 @@ import net.minecraft.client.gui.GuiChat;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.util.ChatComponentText;
 import net.minecraftforge.client.ClientCommandHandler;
+import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.InputEvent;
@@ -26,28 +27,33 @@ public final class BotzeeController {
     private static final int RECORD_LIMIT = 20000;
     private static final Random RANDOM = new Random();
     private static final List<Experience> REPLAY = new ArrayList<Experience>();
-    private static final NeuralPolicy POLICY = new NeuralPolicy(INPUTS, 24, ACTIONS);
+    private static final ModelManager MODELS = new ModelManager(new File(new File(MINECRAFT.mcDataDir, "botzee"), "models"), INPUTS, 24, ACTIONS);
     private static final BedwarsDetector BEDWARS = new BedwarsDetector();
     private static final KeyBinding RECORD_KEY = new KeyBinding("Botzee: Toggle recording", Keyboard.KEY_R, "Botzee");
     private static final KeyBinding TRAIN_KEY = new KeyBinding("Botzee: Train policy", Keyboard.KEY_T, "Botzee");
+    private static final KeyBinding MODELS_KEY = new KeyBinding("Botzee: Open models", Keyboard.KEY_M, "Botzee");
     private static boolean recording;
     private static boolean playing;
     private static boolean reinforcement;
     private static long ticks;
+    private static int actionsThisSecond;
     private static float previousHealth = 20.0F;
     private static float previousPlayHealth = 20.0F;
     private static int autoQueueDelay;
     private static GuiChat autoQueueChat;
     private static final String BEDWARS_QUEUE_COMMAND = "/play bedwars_eight_one";
     private static final File POLICY_FILE = new File(new File(MINECRAFT.mcDataDir, "botzee"), "policy.bin");
+    private static final ChatScoreManager CHAT_SCORES = new ChatScoreManager(new File(new File(MINECRAFT.mcDataDir, "botzee"), "chat-rules.txt"));
+    private static float pendingChatReward;
 
     private BotzeeController() { }
 
     public static void initialize() {
         ClientRegistry.registerKeyBinding(RECORD_KEY);
         ClientRegistry.registerKeyBinding(TRAIN_KEY);
+        ClientRegistry.registerKeyBinding(MODELS_KEY);
         try {
-            POLICY.load(POLICY_FILE);
+            MODELS.active().load(POLICY_FILE);
         } catch (IOException ignored) {
             // A missing or unreadable policy starts with the deterministic initial weights.
         }
@@ -72,6 +78,20 @@ public final class BotzeeController {
         if (playing && ++ticks % 2 == 0) {
             playStep();
         }
+        if (playing && ticks % 20 == 0) {
+            message("§fmodel=§b" + MODELS.activeName() + " §factions/s=§b" + actionsThisSecond + " §fsamples=§b" + REPLAY.size());
+            actionsThisSecond = 0;
+        }
+    }
+
+    @SubscribeEvent
+    public void onChat(ClientChatReceivedEvent event) {
+        String text = event.message == null ? "" : event.message.getUnformattedText();
+        float reward = CHAT_SCORES.score(text);
+        if (reward != 0.0F) {
+            pendingChatReward += reward;
+            message("§dCustom chat score §7(" + (reward >= 0.0F ? "+" : "") + reward + ")");
+        }
     }
 
     @SubscribeEvent
@@ -81,6 +101,9 @@ public final class BotzeeController {
         }
         if (TRAIN_KEY.isPressed()) {
             learn();
+        }
+        if (MODELS_KEY.isPressed()) {
+            openModels();
         }
     }
 
@@ -117,7 +140,7 @@ public final class BotzeeController {
     private void recordStep() {
         float[] state = observe();
         int action = actionMask();
-        float reward = MINECRAFT.thePlayer.getHealth() - previousHealth + BEDWARS.getReward();
+        float reward = MINECRAFT.thePlayer.getHealth() - previousHealth + BEDWARS.getReward() + getChatReward();
         previousHealth = MINECRAFT.thePlayer.getHealth();
         if (REPLAY.size() == RECORD_LIMIT) {
             REPLAY.remove(0);
@@ -126,15 +149,16 @@ public final class BotzeeController {
     }
 
     private void playStep() {
-        int action = POLICY.chooseAction(observe(), reinforcement);
+        int action = MODELS.active().chooseAction(observe(), reinforcement);
+        actionsThisSecond++;
         applyAction(action);
         if (reinforcement) {
-            float healthDelta = MINECRAFT.thePlayer.getHealth() - previousPlayHealth + BEDWARS.getReward();
+            float healthDelta = MINECRAFT.thePlayer.getHealth() - previousPlayHealth + BEDWARS.getReward() + getChatReward();
             previousPlayHealth = MINECRAFT.thePlayer.getHealth();
-            POLICY.reinforce(observe(), action, healthDelta);
+            MODELS.active().reinforce(observe(), action, healthDelta);
             if (RANDOM.nextInt(20) == 0 && !REPLAY.isEmpty()) {
                 Experience sample = REPLAY.get(RANDOM.nextInt(REPLAY.size()));
-                POLICY.reinforce(sample.state, sample.action, sample.reward);
+                MODELS.active().reinforce(sample.state, sample.action, sample.reward);
             }
         }
     }
@@ -154,13 +178,14 @@ public final class BotzeeController {
         }
         for (int pass = 0; pass < 8; pass++) {
             for (Experience sample : REPLAY) {
-                POLICY.reinforce(sample.state, sample.action, sample.reward + 0.05F);
+                MODELS.active().reinforce(sample.state, sample.action, sample.reward + 0.05F);
             }
         }
         reinforcement = true;
         try {
-            POLICY.save(POLICY_FILE);
-            message("Learned from " + REPLAY.size() + " samples; policy saved.");
+            MODELS.active().save(POLICY_FILE);
+            MODELS.saveActive();
+            message("Learned from " + REPLAY.size() + " samples; model " + MODELS.activeName() + " saved.");
         } catch (IOException exception) {
             message("Learned from " + REPLAY.size() + " samples, but policy save failed.");
         }
@@ -169,6 +194,25 @@ public final class BotzeeController {
     public static void clearRecording() {
         REPLAY.clear();
         message("Cleared all recorded gameplay data.");
+    }
+
+    static void openModels() { MINECRAFT.displayGuiScreen(new ModelScreen()); }
+    static void openChatScores() { MINECRAFT.displayGuiScreen(new ChatScoreScreen()); }
+    static String activeModel() { return MODELS.activeName(); }
+    static List<String> modelNames() { return MODELS.names(); }
+    static void modelMessage(String text) { message(text); }
+    static List<ChatScoreManager.Rule> chatRules() { return CHAT_SCORES.rules(); }
+    static void addChatRule(String text, float points, boolean regex) throws IOException { CHAT_SCORES.add(text, points, regex); CHAT_SCORES.save(); }
+    static void updateChatRule(int index, String text, float points, boolean regex) throws IOException { CHAT_SCORES.update(index, text, points, regex); CHAT_SCORES.save(); }
+    static void deleteChatRule(int index) throws IOException { CHAT_SCORES.remove(index); CHAT_SCORES.save(); }
+    static boolean createModel(String name) throws IOException { return MODELS.create(name); }
+    static boolean deleteActiveModel() throws IOException { return MODELS.deleteActive(); }
+    static void selectModel(int index) {
+        List<String> names = MODELS.names();
+        if (index >= 0 && index < names.size()) {
+            MODELS.select(names.get(index));
+            message("Selected model " + MODELS.activeName() + ".");
+        }
     }
 
     public static void play() {
@@ -188,6 +232,12 @@ public final class BotzeeController {
 
     public static String status() {
         return "recording=" + recording + ", playing=" + playing + ", reinforcement=" + reinforcement + ", samples=" + REPLAY.size() + ", " + BEDWARS.status();
+    }
+
+    private static float getChatReward() {
+        float reward = pendingChatReward;
+        pendingChatReward = 0.0F;
+        return reward;
     }
 
     private static float[] observe() {

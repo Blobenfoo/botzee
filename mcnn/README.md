@@ -12,10 +12,13 @@ The commands are client-side chat commands:
 - `/botzee stop` stops playback and releases every key Botzee can control.
 - `/botzee status` reports the current mode and training count.
 - `/botzee clear` deletes all recorded gameplay samples from memory.
+- `/botzee models` opens the model-selection GUI.
 
 The trained neural policy is saved after each `/botzee learn` cycle at `.minecraft/botzee/policy.bin` and loaded automatically on startup. `/botzee clear` removes replay samples only; it does not delete the trained policy file.
 
 The default client keybind `R` toggles recording and `T` trains the policy. Both can be changed in Minecraft's Controls menu under the `Botzee` category.
+
+Press `M` or use `/botzee models` to switch named models, create a new model, or delete the selected non-default model. Models are stored in `.minecraft/botzee/models/*.bin`.
 
 Botzee controls the vanilla inventory, drop, hotbar, movement, jump, sneak, attack, and use-item bindings. This gives the policy the key-level primitives needed to open inventories and shops, select purchases, and interact with post-game menus. It does not type arbitrary chat text or issue server commands; joining a new game is learned only through available keybind-driven menu interactions.
 
